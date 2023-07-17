@@ -1,4 +1,4 @@
-name: Rust All Platform
+name: Publish Multiplatform
 
 on:
   workflow_dispatch:
