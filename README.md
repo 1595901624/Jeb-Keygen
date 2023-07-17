@@ -1,2 +1,12 @@
-# Jeb-Keygen
-A Jeb Keygen
+# Jeb Keygen
+
+A Jeb Keygen Support v3
+
+## How to use
+
+1. Download the latest version of [Jeb Keygen]
+2. Run Jeb Keygen
+3. Input License Data, such
+   as `48000000A8068B0EA714CC4A770015789E22A4C5311A708D62E9EA8DCDCE921AE5B76CDAAF19A2AB4F30FF6B0F7699C8E680122D3ED18466F8CC2BE9CFD73CE833A61297C0FC8561AAD559752147292E`
+4. Click Enter
+5. Copy the License Key
