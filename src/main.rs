@@ -9,6 +9,8 @@
 *
 ***********************************************************/
 
+use std::io::Read;
+
 /// extra rc4 key
 const RC4_KEY_EXT: &[u8] = b"Eg\xa2\x99_\x83\xf1\x10";
 /// CRC32 Table
@@ -167,6 +169,10 @@ fn main() -> std::io::Result<()> {
     // parse post data
     let (info, _) = parse_post(&data)?;
     let sn = keygen_sn(info[3], info[4]);
-    println!("JEB License Key:\n{}", sn);
+    println!("JEB License Key:\n{}\n", sn);
+
+    println!("Press any key to exit...");
+    let mut buffer = [0; 1];
+    let _ = std::io::stdin().read_exact(&mut buffer);
     Ok(())
 }
