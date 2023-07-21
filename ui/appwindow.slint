@@ -1,0 +1,49 @@
+import { Button, VerticalBox,TextEdit , LineEdit, AboutSlint} from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    title: "JEB KeyGen V1.0.0";
+    min-width: 400px;
+    min-height: 350px;
+    max-height: 350px;
+    max-width: 400px;
+    default-font-weight: 700;
+
+    in-out property <string> license_key: "";
+    in-out property <string> license_data: "";
+    callback generate_license_key_click();
+
+    VerticalBox {
+        Text {
+            height: 20px;
+            text: "Please Input License Data:";
+        }
+        TextEdit {
+            width: 100%;
+            height: 100px;
+            edited(text) => {
+                root.license_data = text;
+            }
+        }
+        Button {
+            width: 100%;
+            height: 30px;
+            primary: true;
+            text: "Generate License Key";
+            clicked => {
+                root.generate-license-key-click();
+            }
+        }
+        Text {
+            height: 20px;
+            text: "License Key:";
+        }
+        LineEdit {
+            text: root.license_key;
+            read-only: true;
+            placeholder-text: "Wait...";
+            width: 100%;
+            height: 20px;
+        }
+        AboutSlint {}
+    }
+}
