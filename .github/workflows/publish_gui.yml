@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with: { ref: xxx }
+        with: { ref: gui }
 
       - name: 'Setup Rust'
         uses: dtolnay/rust-toolchain@stable
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-        with: { ref: xxx }
+        with: { ref: gui }
 
       - name: Install xattr
         run: |
