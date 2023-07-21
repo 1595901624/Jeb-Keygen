@@ -1,0 +1,209 @@
+name: Publish Multiplatform GUI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tagName:
+        description: 'tagName'
+        required: true
+        default: 'v'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with: { ref: gui }
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: get input tag name
+        run: echo "BUILD_TAG_NAME=$inputs.tagName" >> $GITHUB_ENV
+  #      - name: create Release
+  #        id: create_release
+  #        uses: actions/create-release@v1
+  #        env:
+  #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #        with:
+  #          tag_name: ${{ inputs.tagName }}
+  #          release_name: Release ${{ inputs.tagName }}
+  #          draft: true
+  #          prerelease: false
+
+
+  build:
+    needs: create-release
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: linux
+            os: ubuntu-20.04
+            arch: x86_64
+            target: x86_64-unknown-linux-gnu
+          - build: macos
+            os: macos-latest
+            arch: x86_64
+            target: x86_64-apple-darwin
+          - build: macos
+            os: macos-latest
+            arch: aarch64
+            target: aarch64-apple-darwin
+          - build: windows
+            os: windows-latest
+            arch: x86_64
+            target: x86_64-pc-windows-msvc
+          - build: windows
+            os: windows-latest
+            arch: i686
+            target: i686-pc-windows-msvc
+          - build: windows
+            os: windows-latest
+            arch: aarch64
+            target: aarch64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v3
+        with: { ref: xxx }
+
+      - name: 'Setup Rust'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'ubuntu-20.04'
+        with:
+          name: jeb_keygen_gui-linux
+          path: |
+            ./target/${{ matrix.target }}/release/jeb_keygen_gui
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'macos-latest'
+        with:
+          name: jeb_keygen_gui-macos-${{ matrix.arch }}
+          path: |
+            ./target/${{ matrix.target }}/release/jeb_keygen_gui
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows-latest'
+        with:
+          name: jeb_keygen_gui-${{ matrix.target }}
+          path: |
+            ./target/${{ matrix.target }}/release/jeb_keygen_gui.exe
+
+  release-artifact:
+    permissions:
+      contents: write
+    needs: build
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with: { ref: xxx }
+
+      - name: Install xattr
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xattr
+
+      - name: Download macos artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-macos-x86_64
+          path: bundle/macos/x86_64
+
+      - name: Download macos artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-macos-aarch64
+          path: bundle/macos/aarch64
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-x86_64-pc-windows-msvc
+          path: bundle/windows/x86_64
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-i686-pc-windows-msvc
+          path: bundle/windows/i686
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-x86_64-pc-windows-msvc
+          path: bundle/windows/aarch64
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jeb_keygen_gui-linux
+          path: bundle/linux
+
+      - name: Rename artifacts
+        run: |
+          mv "bundle/linux/jeb_keygen_gui" "bundle/jeb_keygen_gui_linux_amd64_${{ inputs.tagName }}"
+          mv "bundle/macos/x86_64/jeb_keygen_gui" "bundle/jeb_keygen_gui_macos_amd64_${{ inputs.tagName }}"
+          mv "bundle/macos/aarch64/jeb_keygen_gui" "bundle/jeb_keygen_gui_macos_aarch64_${{ inputs.tagName }}"
+          mv "bundle/windows/x86_64/jeb_keygen_gui.exe" "bundle/jeb_keygen_gui_windows_x86_64_${{ inputs.tagName }}.exe"
+          mv "bundle/windows/i686/jeb_keygen_gui.exe" "bundle/jeb_keygen_gui_windows_i686_${{ inputs.tagName }}.exe"
+          mv "bundle/windows/aarch64/jeb_keygen_gui.exe" "bundle/jeb_keygen_gui_windows_aarch64_${{ inputs.tagName }}.exe"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.tagName }}
+          release_name: Release ${{ inputs.tagName }}
+          body: release
+          prerelease: false
+          generate_release_notes: false
+          files: ./bundle/*
+
+
+#   publish-release:
+#     permissions:
+#       contents: write
+#     runs-on: ubuntu-20.04
+#     needs: [create-release, build]
+
+#     steps:
+#       - name: publish release
+#         id: publish-release
+#         uses: actions/github-script@v6
+#         env:
+#           release_id: ${{ needs.create-release.outputs.release_id }}
+#         with:
+#           script: |
+#             github.rest.repos.updateRelease({
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               release_id: process.env.release_id,
+#               draft: false,
+#               prerelease: false
+#             })
